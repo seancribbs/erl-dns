@@ -7,8 +7,13 @@
 -define(MAX_TXT_SIZE, 255).
 
 -ifdef(TEST).
+-ifdef(EQC).
+-include_lib("eqc/include/eqc.hrl").
+-endif.
 -include_lib("eunit/include/eunit.hrl").
 -endif.
+
+
 
 % Public API
 parse(Binary) when is_binary(Binary) -> parse(binary_to_list(Binary));
@@ -52,4 +57,17 @@ parse_test() ->
   ?assert(parse("test") =:= [[<<"test">>]]),
   ?assert(parse(lists:duplicate(270, "x")) =:= [[list_to_binary(lists:duplicate(255, "x")), list_to_binary(lists:duplicate(15, "x"))]]).
 
+-ifdef(EQC).
+-compile(export_all).
+ascii() ->
+    choose(0, 127).
+
+gen_txt() ->
+    ?SUCHTHAT(String, non_empty(list(ascii())), length(String) =< 255).
+
+prop_parse_txt() ->
+    ?FORALL(Txt, gen_txt(),
+            parse(Txt) == [[list_to_binary(Txt)]]).
+            
+-endif.
 -endif.
